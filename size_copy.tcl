@@ -20,11 +20,50 @@ set cellList [sort_collection [get_cells *] base_name]
 set VtswapCnt 0
 set SizeswapCnt 0
 
-set M [list]
+# Calculate sensitivity and place the corresponding element into the M dictionary
+proc ComputeSensitivity { c_i mode } {
+	puts $c_i
+	puts $mode
 
-proc ComputeSensitivity {c_i, downsize} {
+	# set cellName [get_attri $c_i base_name]
+    set libcell [get_lib_cells -of_objects $c_i]
+    set libcellName [get_attri $libcell base_name]
+    set originalSlack [PtCellSlack $c_i]
+    set originalDelay [PtCellDelay $c_i]
+    set originalLeak [PtCellLeak $c_i]
 
+    set newlibcellName "null"
+    if { $mode == "downsize" } {
+    	set newlibcellName [getNextSizeDown $libcellName]
+    }
+
+    if { $mode == "upscale" } {
+    	set newlibcellName [getNextVtDown $libcellName]
+    }
+
+
+
+    size_cell $c_i $newlibcellName
+	set nextSlack [PtCellSlack $c_i]
+	set nextDelay [PtCellDelay $c_i]
+	set nextLeak [PtCellLeak $c_i]
+
+
+	# puts "================================="
+	# puts [PtTimingPaths $c_i]
+	# puts [PtCellFanout $c_i]
+	# puts "================================="
+
+	# set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
+	set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) } ]
+	
+
+	size_cell $c_i $libcellName
+
+	return sensitivity
 }
+
+set index 0
 
 foreach_in_collection cell $cellList {
 	set cellName [get_attri $cell base_name]
@@ -34,28 +73,32 @@ foreach_in_collection cell $cellList {
         continue
     }
 
-    # if is downsizeable
-    if { [regexp {[a-z][a-z][0-9][0-9][smf]08} $libcellName] } { 
-    	set m_target libcellName
-    	set m_change [set newlibcellName [string replace $libcellName 5 6 "04"]]
-    	set m_sensitivity ComputeSensitivity(libcellName, m_change)
-    	set m {m_target m_change m_sensitivity}
-    	lappend M m
+    set tempSensitivity 0
+    if { [getNextSizeDown $libcellName] != "skip" } {
+    	set $tempSensitivity [ComputeSensitivity $cellName "downsize"]
+    	dict set M $index target $cellName
+    	dict set M $index change "downsize"
+    	dict set M $index sensitivity $tempSensitivity
     }
 
-    # if is not a HVT
-    if { [regexp {[a-z][a-z][0-9][0-9]f[0-9][0-9]} $libcellName] } {
-    	set m_target libcellName
-    	set m_change [set newlibcellName [string replace $libcellName 4 4 m]]
-    	set m_sensitivity ComputeSensitivity(libcellName, m_change)
-    	set m {m_target m_change m_sensitivity}
-    	lappend M m
+    if { [getNextVtUp $libcellName] != "skip" } {
+    	set $tempSensitivity [ComputeSensitivity $cellName "upscale"]
+    	if { [dict exists M index] && [dict get M index sensitivity] > $tempSensitivity } {
+    		continue
+    	}
+   		dict set M $index target $cellName
+    	dict set M $index change "upscale"
+    	dict set M $index sensitivity $tempSensitivity
+    	incr index
     }
+
+    # set sensitivity [ComputeSensitivity $cellName $downsize $upscale]
+    # puts $sensitivity
 }
 
-while { [llength M] != 0 } {
+# while { [dict size $M] } {
 
-}
+# }
 
 set finalWNS  [ PtWorstSlack clk ]
 set finalLeak [ PtLeakPower ]
