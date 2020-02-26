@@ -22,19 +22,18 @@ set SizeswapCnt 0
 
 
 # Self modified Next Vt Up to return "skip" if invalid
-proc getNextVtUpModified { libcellName } {
-    if { [regexp {[a-z][a-z][0-9][0-9]m[0-9][0-9]} $libcellName] } { 
-        set newlibcellName [string replace $libcellName 4 4 f]
-        return $newlibcellName
-    }
-    
-    if { [regexp {[a-z][a-z][0-9][0-9]s[0-9][0-9]} $libcellName] } { 
+proc getNextVtDownModified { libcellName } {
+    if { [regexp {[a-z][a-z][0-9][0-9]f[0-9][0-9]} $libcellName] } { 
         set newlibcellName [string replace $libcellName 4 4 m]
         return $newlibcellName
     }
     
-    if { [regexp {[a-z][a-z][0-9][0-9]f[0-9][0-9]} $libcellName] } { 
-        set newlibcellName $libcellName
+    if { [regexp {[a-z][a-z][0-9][0-9]m[0-9][0-9]} $libcellName] } { 
+        set newlibcellName [string replace $libcellName 4 4 s]
+        return $newlibcellName
+    }
+    
+    if { [regexp {[a-z][a-z][0-9][0-9]s[0-9][0-9]} $libcellName] } { 
         return "skip"
     }
 
@@ -71,7 +70,7 @@ proc ComputeSensitivity { c_i mode } {
     }
 
     if { $mode == "upscale" } {
-        set newlibcellName [getNextVtUpModified $libcellName]
+        set newlibcellName [getNextVtDownModified $libcellName]
     }
 
     size_cell $c_i $newlibcellName
@@ -104,7 +103,6 @@ proc GetMostSensitiveCell { M } {
 
 	dict for {id cell} $M {
 		# puts "========================================================="
-		puts "id: $id"
 		dict with cell {
 			# puts "target: $target, change: $change, sensitivity: $sensitivity"
 			if {$sensitivity > $HighestSensitivitySeen} {
@@ -136,7 +134,7 @@ foreach_in_collection cell $cellList {
         dict set M $index sensitivity $tempSensitivity
     }
 
-    if { [getNextVtUpModified $libcellName] != "skip" } {
+    if { [getNextVtDownModified $libcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "upscale"]
         if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
             dict set M $index target $cellName
@@ -147,12 +145,11 @@ foreach_in_collection cell $cellList {
 
 	incr index
 }
-
 puts "========================================================="
-puts "start loop..."
+puts "Start loop..."
 set LoopLimit 100
 set LoopCount 1
-while { [dict size $M] && LoopCount < LoopLimit} {
+while { [dict size $M] && $LoopCount < $LoopLimit} {
 	incr LoopCount
 	puts "Current loop count: $LoopCount"
 	
@@ -162,17 +159,16 @@ while { [dict size $M] && LoopCount < LoopLimit} {
 	set sensitivity [dict get $M $IndexOfCell sensitivity]
 
 	puts "Target cell: $target, change: $change, sensitivity: $sensitivity"
-	puts "========================================================="
 
 	set libcell [get_lib_cells -of_objects $target]
     set libcellName [get_attri $libcell base_name]
 
 	set newlibcellName "null"
-    if { $chaneg == "downsize" } {
+    if { $change == "downsize" } {
         set newlibcellName [getNextSizeDown $libcellName]
     }
     if { $change == "upscale" } {
-        set newlibcellName [getNextVtUpModified $libcellName]
+        set newlibcellName [getNextVtDownModified $libcellName]
     }
 
 	size_cell $target $newlibcellName
@@ -186,7 +182,7 @@ while { [dict size $M] && LoopCount < LoopLimit} {
 	}
 
 	puts "WNS is OK."
-	puts "Cell ${target} is swapped to $newlibcellName"
+	puts "Cell ${target}, $libcellName is swapped to $newlibcellName"
 
 	# Remove this cell from M
 	set M [dict remove $M IndexOfCell]
@@ -198,7 +194,7 @@ while { [dict size $M] && LoopCount < LoopLimit} {
         dict set M $index change "downsize"
         dict set M $index sensitivity $tempSensitivity
     }
-    if { [getNextVtUpModified $newlibcellName] != "skip" } {
+    if { [getNextVtDownModified $newlibcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "upscale"]
         if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
             dict set M $index target $target
@@ -208,14 +204,20 @@ while { [dict size $M] && LoopCount < LoopLimit} {
     }
 
 	incr index
-
+	puts "---------------------------------------------------------"
+	
 	if {$LoopCount % 10 == 0} {
-		[Report]
+		puts "creating report..."
+		Report
+		puts "========================================================="
 	}
+
 }
 
+puts "Loop has ended."
 
-[Report]
+Report
+
 close $outFp    
 
 
