@@ -128,10 +128,12 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
     }
 
 	set newlibcellName "null"
+	set choice 0
     if { $change == "downsize" } {
         set newlibcellName [getNextSizeDown $libcellName]
     }
     if { $change == "upscale" } {
+		set choice 1
         set newlibcellName [getNextVtDown $libcellName]
     }
 
@@ -142,11 +144,19 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 		# restore the original cell
 		puts "WNS goes negative. Withdraw this modification."
 		size_cell $target $libcellName
+		set M [dict remove $M $IndexOfCell]
 		continue
 	}
 
 	puts "WNS is OK."
 	puts "Cell ${target}, $libcellName is swapped to $newlibcellName"
+
+	# Update counter
+	if {choice == 0} {
+		incr SizeswapCnt
+	} else {
+		incr VtswapCnt
+	}
 
 	# Remove this cell from M
 	set M [dict remove $M $IndexOfCell]
