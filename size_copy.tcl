@@ -82,9 +82,7 @@ foreach_in_collection cell $cellList {
     set libcell [get_lib_cells -of_objects $cellName]
     set libcellName [get_attri $libcell base_name]
 
-	puts "libcellName: $libcellName"
     if {$libcellName == "ms00f80"} {
-		puts "skipped ms00f80"
         continue
     }
 
@@ -164,7 +162,7 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
         dict set M $index sensitivity $tempSensitivity
     }
     if { [getNextVtDown $newlibcellName] != "skip" } {
-        set tempSensitivity [ComputeSensitivity $cellName "upscale"]
+        set tempSensitivity [ComputeSensitivity $target "upscale"]
         if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
             dict set M $index target $target
 			dict set M $index change "upscale"
@@ -183,15 +181,12 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 		set capVio [ PtGetCapVio ]
 		set tranVio [ PtGetTranVio ]
 		set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
-		puts $outFp "======================================" 
-		puts $outFp "Final slack:\t${finalWNS} ps"
-		puts $outFp "Final leakage:\t${finalLeak} W"
-		puts $outFp "Final $capVio"
-		puts $outFp "Final $tranVio"
-		puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
-		puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
-		puts $outFp "Leakage improvment\t${improvment} %"
-
+		puts "=========================================================" 
+		puts "Final slack:\t${finalWNS} ps"
+		puts "Final leakage:\t${finalLeak} W"
+		puts "Final $capVio"
+		puts "Final $tranVio"
+		puts "Leakage improvment\t${improvment} %"
 		puts "========================================================="
 	}
 
