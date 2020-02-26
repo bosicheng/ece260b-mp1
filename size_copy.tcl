@@ -41,13 +41,10 @@ proc ComputeSensitivity { c_i mode } {
     	set newlibcellName [getNextVtDown $libcellName]
     }
 
-
-
     size_cell $c_i $newlibcellName
 	set nextSlack [PtCellSlack $c_i]
 	set nextDelay [PtCellDelay $c_i]
 	set nextLeak [PtCellLeak $c_i]
-
 
 	# puts "================================="
 	# puts [PtTimingPaths $c_i]
@@ -57,7 +54,6 @@ proc ComputeSensitivity { c_i mode } {
 	# set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
 	set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) } ]
 	
-
 	size_cell $c_i $libcellName
 
 	return sensitivity
