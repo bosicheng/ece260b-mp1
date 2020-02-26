@@ -73,7 +73,7 @@ proc ComputeSensitivity { c_i mode } {
     # puts [expr  ($originalLeak - $nextLeak) * ($originalSlack - $nextSlack) / ($nextDelay - $originalDelay)  ]
 
     # set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
-    set sensitivity [expr  ($originalLeak - $nextLeak) * ($originalSlack - $nextSlack) / ($nextDelay - $originalDelay)  ]
+    set sensitivity [expr  ($originalLeak - $nextLeak) * $originalSlack / ($nextDelay - $originalDelay)  ]
     
     size_cell $c_i $libcellName
 
