@@ -40,6 +40,22 @@ proc getNextVtUpModified { libcellName } {
 
 }
 
+proc Report {} {
+	set finalWNS  [ PtWorstSlack clk ]
+	set finalLeak [ PtLeakPower ]
+	set capVio [ PtGetCapVio ]
+	set tranVio [ PtGetTranVio ]
+	set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
+	puts $outFp "======================================" 
+	puts $outFp "Final slack:\t${finalWNS} ps"
+	puts $outFp "Final leakage:\t${finalLeak} W"
+	puts $outFp "Final $capVio"
+	puts $outFp "Final $tranVio"
+	puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
+	puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
+	puts $outFp "Leakage improvment\t${improvment} %"
+}
+
 # Calculate sensitivity and place the corresponding element into the M dictionary
 # c_i is cellName
 proc ComputeSensitivity { c_i mode } {
@@ -82,36 +98,6 @@ proc ComputeSensitivity { c_i mode } {
     return $sensitivity
 }
 
-# Calculate sensitivity for each cell in netlist
-set index 0
-foreach_in_collection cell $cellList {
-    set cellName [get_attri $cell base_name]
-    set libcell [get_lib_cells -of_objects $cellName]
-    set libcellName [get_attri $libcell base_name]
-    if {$libcellName == "ms00f80"} {
-        continue
-    }
-
-    set tempSensitivity 0
-    if { [getNextSizeDown $libcellName] != "skip" } {
-        set tempSensitivity [ComputeSensitivity $cellName "downsize"]
-        dict set M $index target $cellName
-        dict set M $index change "downsize"
-        dict set M $index sensitivity $tempSensitivity
-    }
-
-    if { [getNextVtUpModified $libcellName] != "skip" } {
-        set tempSensitivity [ComputeSensitivity $cellName "upscale"]
-        if { ![dict exists $M $index] || [dict get $M $index sensitivity] < $tempSensitivity } {
-            dict set M $index target $cellName
-			dict set M $index change "upscale"
-			dict set M $index sensitivity $tempSensitivity
-        }
-    }
-
-	incr index
-}
-
 # Sort M in descending order according to sensitivity
 proc GetMostSensitiveCell { M } {
 	set HighestSensitivitySeen 0
@@ -133,22 +119,38 @@ proc GetMostSensitiveCell { M } {
 	return $IndexOfCell
 }
 
-proc Report {} {
-	set finalWNS  [ PtWorstSlack clk ]
-	set finalLeak [ PtLeakPower ]
-	set capVio [ PtGetCapVio ]
-	set tranVio [ PtGetTranVio ]
-	set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
-	puts $outFp "======================================" 
-	puts $outFp "Final slack:\t${finalWNS} ps"
-	puts $outFp "Final leakage:\t${finalLeak} W"
-	puts $outFp "Final $capVio"
-	puts $outFp "Final $tranVio"
-	puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
-	puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
-	puts $outFp "Leakage improvment\t${improvment} %"
+# Calculate sensitivity for each cell in netlist
+set index 0
+foreach_in_collection cell $cellList {
+    set cellName [get_attri $cell base_name]
+    set libcell [get_lib_cells -of_objects $cellName]
+    set libcellName [get_attri $libcell base_name]
+    if {$libcellName == "ms00f80"} {
+        continue
+    }
+
+    set tempSensitivity 0
+    if { [getNextSizeDown $libcellName] != "skip" } {
+        set tempSensitivity [ComputeSensitivity $cellName "downsize"]
+        dict set M $index target $cellName
+        dict set M $index change "downsize"
+        dict set M $index sensitivity $tempSensitivity
+    }
+
+    if { [getNextVtUpModified $libcellName] != "skip" } {
+        set tempSensitivity [ComputeSensitivity $cellName "upscale"]
+        if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
+            dict set M $index target $cellName
+			dict set M $index change "upscale"
+			dict set M $index sensitivity $tempSensitivity
+        }
+    }
+
+	incr index
 }
 
+puts "========================================================="
+puts "start loop..."
 set LoopLimit 100
 set LoopCount 1
 while { [dict size $M] && LoopCount < LoopLimit} {
@@ -199,7 +201,7 @@ while { [dict size $M] && LoopCount < LoopLimit} {
     }
     if { [getNextVtUpModified $newlibcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "upscale"]
-        if { ![dict exists $M $index] || [dict get $M $index sensitivity] < $tempSensitivity } {
+        if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
             dict set M $index target $target
 			dict set M $index change "upscale"
 			dict set M $index sensitivity $tempSensitivity
