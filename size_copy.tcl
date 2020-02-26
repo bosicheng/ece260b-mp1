@@ -170,9 +170,12 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 	puts "Cell ${target}, $libcellName is swapped to $newlibcellName"
 
 	# Remove this cell from M
-	set M [dict remove $M IndexOfCell]
+	set M [dict remove $M $IndexOfCell]
 	# Add modification plans to M
 	set tempSensitivity 0
+	if {$newlibcellName == "ms00f80"} {
+        continue
+    }
     if { [getNextSizeDown $newlibcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $target "downsize"]
         dict set M $index target $target
