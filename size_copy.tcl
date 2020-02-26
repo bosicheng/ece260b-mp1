@@ -1,26 +1,3 @@
-set design [get_attri [current_design] full_name]
-set outFp [open ${design}_sizing.rpt w]
-
-set initialWNS  [ PtWorstSlack clk ]
-set initialLeak [ PtLeakPower ]
-set capVio [ PtGetCapVio ]
-set tranVio [ PtGetTranVio ]
-puts "Initial slack:\t${initialWNS} ps"
-puts "Initial leakage:\t${initialLeak} W"
-puts "Final $capVio"
-puts "Final $tranVio"
-puts "======================================" 
-puts $outFp "Initial slack:\t${initialWNS} ps"
-puts $outFp "Initial leakage:\t${initialLeak} W"
-puts $outFp "Final $capVio"
-puts $outFp "Final $tranVio"
-puts $outFp "======================================" 
-
-set cellList [sort_collection [get_cells *] base_name]
-set VtswapCnt 0
-set SizeswapCnt 0
-
-
 proc Report {} {
 	set finalWNS  [ PtWorstSlack clk ]
 	set finalLeak [ PtLeakPower ]
@@ -90,6 +67,30 @@ proc GetMostSensitiveCell { M } {
 	return $IndexOfCell
 }
 
+
+set design [get_attri [current_design] full_name]
+set outFp [open ${design}_sizing.rpt w]
+
+set initialWNS  [ PtWorstSlack clk ]
+set initialLeak [ PtLeakPower ]
+set capVio [ PtGetCapVio ]
+set tranVio [ PtGetTranVio ]
+puts "Initial slack:\t${initialWNS} ps"
+puts "Initial leakage:\t${initialLeak} W"
+puts "Final $capVio"
+puts "Final $tranVio"
+puts "======================================" 
+puts $outFp "Initial slack:\t${initialWNS} ps"
+puts $outFp "Initial leakage:\t${initialLeak} W"
+puts $outFp "Final $capVio"
+puts $outFp "Final $tranVio"
+puts $outFp "======================================" 
+
+set cellList [sort_collection [get_cells *] base_name]
+set VtswapCnt 0
+set SizeswapCnt 0
+
+
 # Calculate sensitivity for each cell in netlist
 set index 0
 foreach_in_collection cell $cellList {
@@ -122,9 +123,10 @@ foreach_in_collection cell $cellList {
 
 	incr index
 }
+
 puts "========================================================="
 puts "Start loop..."
-set LoopLimit 100
+set LoopLimit 0
 set LoopCount 0
 while { [dict size $M] && $LoopCount < $LoopLimit} {
 	incr LoopCount
