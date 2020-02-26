@@ -136,7 +136,9 @@ foreach_in_collection cell $cellList {
 
 # puts $M
 
+set counter 0
 while { [dict size $M] } {
+    incr counter
     set maxSen 0
     set maxInd 0
     foreach key [dict keys $M] {
@@ -146,15 +148,15 @@ while { [dict size $M] } {
         }
     }
     
-    if { $maxInd == 0 } {
+    if { $maxInd == 0 || counter == 1000} {
     	break
     }
 
     puts "===========================Test========================="
-    puts "================ $maxInd ||||  [dict size $M] ============"
+    puts "================$counter |||| $maxInd ||||  [dict size $M] ============"
 
     set targetCell [dict get $M $maxInd target]
-    puts $targetCell
+    # puts $targetCell
     set targetlibcell [get_lib_cells -of_objects $targetCell]
     set targetlibcellName [get_attri $targetlibcell base_name]
 
