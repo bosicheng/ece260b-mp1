@@ -60,9 +60,9 @@ proc ComputeSensitivity { c_i mode } {
     size_cell $c_i $newlibcellName
 
 
-    # set nextSlack [PtCellSlack $c_i]
-    # set nextDelay [PtCellDelay $c_i]
-    # set nextLeak [PtCellLeak $c_i]
+    set nextSlack [PtCellSlack $c_i]
+    set nextDelay [PtCellDelay $c_i]
+    set nextLeak [PtCellLeak $c_i]
     # puts "==================="
     # puts $nextDelay
     # puts $originalDelay
@@ -80,8 +80,20 @@ proc ComputeSensitivity { c_i mode } {
     return $sensitivity
 }
 
-set index 0
+# Sort M in descending order according to sensitivity
+proc GetMostSensitiveCell { M } {
+	set HighestSensitivitySeen 0
+	set IndexOfCell 0
 
+	dict for {id cell} $M {
+		puts "id: $id"
+		dict with cell {
+			puts "target: $target, change: $change, sensitivity: $sensitivity"
+		}
+	}
+}
+
+set index 0
 foreach_in_collection cell $cellList {
     set cellName [get_attri $cell base_name]
     set libcell [get_lib_cells -of_objects $cellName]
@@ -114,6 +126,8 @@ foreach_in_collection cell $cellList {
         incr index
     }
 }
+
+[GetMostSensitiveCell $M]
 
 # while { [dict size $M] } {
 
