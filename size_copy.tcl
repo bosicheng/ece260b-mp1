@@ -54,23 +54,13 @@ proc ComputeSensitivity { c_i mode } {
     if { $mode == "upscale" } {
         set newlibcellName [getNextVtDown $libcellName]
     }
-	if {newlibcellName == ""} {
-		puts "Error! newlibcellName is empty"
-	}
+	
     size_cell $c_i $newlibcellName
 
     set nextSlack [PtCellSlack $c_i]
     set nextDelay [PtCellDelay $c_i]
     set nextLeak [PtCellLeak $c_i]
-    # puts "==================="
-    # puts $nextDelay
-    # puts $originalDelay
-    # puts $nextLeak
-    # puts $originalLeak
-    # puts $nextSlack
-    # puts $originalSlack
-    # puts [expr  ($originalLeak - $nextLeak) * ($originalSlack - $nextSlack) / ($nextDelay - $originalDelay)  ]
-
+   
     # set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
     set sensitivity [expr  ($originalLeak - $nextLeak) * $originalSlack / ($nextDelay - $originalDelay)  ]
     
@@ -106,7 +96,10 @@ foreach_in_collection cell $cellList {
     set cellName [get_attri $cell base_name]
     set libcell [get_lib_cells -of_objects $cellName]
     set libcellName [get_attri $libcell base_name]
+
+	puts "libcellName: $libcellName"
     if {$libcellName == "ms00f80"} {
+		puts "skipped ms00f80"
         continue
     }
 
