@@ -134,6 +134,6 @@ puts $outFp "Leakage improvment\t${improvment} %"
 
 close $outFp    
 
-#puts "==================="
-#puts $M
+puts "==================="
+puts $M
 
