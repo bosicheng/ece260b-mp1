@@ -85,10 +85,10 @@ proc GetMostSensitiveCell { M } {
 	set HighestSensitivitySeen 0
 	set IndexOfCell 0
 
+	puts "========================================================="
 	dict for {id cell} $M {
 		puts "id: $id"
 		dict with cell {
-			puts "================================================="
 			puts "target: $target, change: $change, sensitivity: $sensitivity"
 			if {$sensitivity > $HighestSensitivitySeen} {
 				set HighestSensitivitySeen sensitivity
@@ -97,7 +97,7 @@ proc GetMostSensitiveCell { M } {
 		}
 	}
 
-	return IndexOfCell
+	return $IndexOfCell
 }
 
 set index 0
@@ -134,8 +134,9 @@ foreach_in_collection cell $cellList {
     }
 }
 
+puts "========================================================="
 set IndexOfCell [GetMostSensitiveCell $M]
-puts "Index of target cell is: $IndexOfCell"
+puts "Index of terget cell is: $IndexOfCell, with sensitivity: [dict get [dict get $M $IndexOfCell] sensitivity]"
 
 # while { [dict size $M] } {
 
@@ -157,6 +158,4 @@ puts $outFp "Leakage improvment\t${improvment} %"
 
 close $outFp    
 
-puts "==================="
-puts $M
 
