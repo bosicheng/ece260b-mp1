@@ -23,7 +23,7 @@ proc ComputeSensitivity { c_i mode } {
     set nextLeak [PtCellLeak $c_i]
    
     # set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
-    set sensitivity [expr  ($originalLeak - $nextLeak) * $originalSlack / ($nextDelay - $originalDelay)  ]
+    set sensitivity [expr  ($originalLeak - $nextLeak) * $originalSlack * 100000 / ($nextDelay - $originalDelay)  ]
     
 	# restore the original cell
     size_cell $c_i $libcellName
@@ -108,7 +108,7 @@ foreach_in_collection cell $cellList {
 
 puts "========================================================="
 puts "Start loop..."
-set LoopLimit 0
+set LoopLimit 1000
 set LoopCount 0
 while { [dict size $M] && $LoopCount < $LoopLimit} {
 	incr LoopCount
@@ -157,20 +157,18 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
     }
     if { [getNextSizeDown $newlibcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $target "downsize"]
-        dict set M $index target $target
-        dict set M $index change "downsize"
-        dict set M $index sensitivity $tempSensitivity
+        dict set M $IndexOfCell target $target
+        dict set M $IndexOfCell change "downsize"
+        dict set M $IndexOfCell sensitivity $tempSensitivity
     }
     if { [getNextVtDown $newlibcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $target "upscale"]
-        if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
-            dict set M $index target $target
-			dict set M $index change "upscale"
-			dict set M $index sensitivity $tempSensitivity
+        if { [dict exists $M $IndexOfCell] == 0 || [dict get $M $IndexOfCell sensitivity] < $tempSensitivity } {
+            dict set M $IndexOfCell target $target
+			dict set M $IndexOfCell change "upscale"
+			dict set M $IndexOfCell sensitivity $tempSensitivity
         }
     }
-
-	incr index
 	puts "---------------------------------------------------------"
 	
 	if {$LoopCount % 10 == 0} {
