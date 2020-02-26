@@ -85,14 +85,14 @@ proc GetMostSensitiveCell { M } {
 	set HighestSensitivitySeen 0
 	set IndexOfCell 0
 
-	puts "========================================================="
 	dict for {id cell} $M {
+		puts "========================================================="
 		puts "id: $id"
 		dict with cell {
 			puts "target: $target, change: $change, sensitivity: $sensitivity"
 			if {$sensitivity > $HighestSensitivitySeen} {
-				set HighestSensitivitySeen sensitivity
-				set IndexOfCell id
+				set $HighestSensitivitySeen $sensitivity
+				set IndexOfCell $id
 			}
 		}
 	}
