@@ -33,7 +33,7 @@ proc getNextVtUpModified { libcellName } {
         return $newlibcellName
     }
     
-    if { [regexp {[a-z][a-z]0-9][0-9]f[0-9][0-9]} $libcellName] } { 
+    if { [regexp {[a-z][a-z][0-9][0-9]f[0-9][0-9]} $libcellName] } { 
         set newlibcellName $libcellName
         return "skip"
     }
@@ -75,7 +75,6 @@ proc ComputeSensitivity { c_i mode } {
     }
 
     size_cell $c_i $newlibcellName
-
 
     set nextSlack [PtCellSlack $c_i]
     set nextDelay [PtCellDelay $c_i]
