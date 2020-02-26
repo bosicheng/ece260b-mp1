@@ -54,7 +54,9 @@ proc ComputeSensitivity { c_i mode } {
     if { $mode == "upscale" } {
         set newlibcellName [getNextVtDown $libcellName]
     }
-
+	if {newlibcellName == ""} {
+		puts "Error! newlibcellName is empty"
+	}
     size_cell $c_i $newlibcellName
 
     set nextSlack [PtCellSlack $c_i]
@@ -130,7 +132,7 @@ foreach_in_collection cell $cellList {
 puts "========================================================="
 puts "Start loop..."
 set LoopLimit 100
-set LoopCount 1
+set LoopCount 0
 while { [dict size $M] && $LoopCount < $LoopLimit} {
 	incr LoopCount
 	puts "Current loop count: $LoopCount"
