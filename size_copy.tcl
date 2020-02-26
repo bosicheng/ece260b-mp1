@@ -1,19 +1,3 @@
-proc Report {} {
-	set finalWNS  [ PtWorstSlack clk ]
-	set finalLeak [ PtLeakPower ]
-	set capVio [ PtGetCapVio ]
-	set tranVio [ PtGetTranVio ]
-	set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
-	puts $outFp "======================================" 
-	puts $outFp "Final slack:\t${finalWNS} ps"
-	puts $outFp "Final leakage:\t${finalLeak} W"
-	puts $outFp "Final $capVio"
-	puts $outFp "Final $tranVio"
-	puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
-	puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
-	puts $outFp "Leakage improvment\t${improvment} %"
-}
-
 # Calculate sensitivity and place the corresponding element into the M dictionary
 # c_i is cellName
 proc ComputeSensitivity { c_i mode } {
@@ -193,7 +177,21 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 	
 	if {$LoopCount % 10 == 0} {
 		puts "creating report..."
-		Report
+		
+		set finalWNS  [ PtWorstSlack clk ]
+		set finalLeak [ PtLeakPower ]
+		set capVio [ PtGetCapVio ]
+		set tranVio [ PtGetTranVio ]
+		set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
+		puts $outFp "======================================" 
+		puts $outFp "Final slack:\t${finalWNS} ps"
+		puts $outFp "Final leakage:\t${finalLeak} W"
+		puts $outFp "Final $capVio"
+		puts $outFp "Final $tranVio"
+		puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
+		puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
+		puts $outFp "Leakage improvment\t${improvment} %"
+
 		puts "========================================================="
 	}
 
@@ -201,7 +199,19 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 
 puts "Loop has ended."
 
-Report
+set finalWNS  [ PtWorstSlack clk ]
+set finalLeak [ PtLeakPower ]
+set capVio [ PtGetCapVio ]
+set tranVio [ PtGetTranVio ]
+set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
+puts $outFp "======================================" 
+puts $outFp "Final slack:\t${finalWNS} ps"
+puts $outFp "Final leakage:\t${finalLeak} W"
+puts $outFp "Final $capVio"
+puts $outFp "Final $tranVio"
+puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
+puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
+puts $outFp "Leakage improvment\t${improvment} %"
 
 close $outFp    
 
