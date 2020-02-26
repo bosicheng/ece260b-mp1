@@ -33,7 +33,7 @@ proc getNextVtUpModified { libcellName } {
         return $newlibcellName
     }
     
-    if { [regexp {[a-z][a-z][0-9][0-9]f[0-9][0-9]} $libcellName] } { 
+    if { [regexp {[a-z][a-z]0-9][0-9]f[0-9][0-9]} $libcellName] } { 
         set newlibcellName $libcellName
         return "skip"
     }
@@ -41,6 +41,7 @@ proc getNextVtUpModified { libcellName } {
 }
 
 # Calculate sensitivity and place the corresponding element into the M dictionary
+# c_i is cellName
 proc ComputeSensitivity { c_i mode } {
     set libcell [get_lib_cells -of_objects $c_i]
     set libcellName [get_attri $libcell base_name]
@@ -75,31 +76,13 @@ proc ComputeSensitivity { c_i mode } {
     # set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
     set sensitivity [expr  ($originalLeak - $nextLeak) * $originalSlack / ($nextDelay - $originalDelay)  ]
     
+	# restore the original cell
     size_cell $c_i $libcellName
 
     return $sensitivity
 }
 
-# Sort M in descending order according to sensitivity
-proc GetMostSensitiveCell { M } {
-	set HighestSensitivitySeen 0
-	set IndexOfCell 0
-
-	dict for {id cell} $M {
-		puts "========================================================="
-		puts "id: $id"
-		dict with cell {
-			puts "target: $target, change: $change, sensitivity: $sensitivity"
-			if {$sensitivity > $HighestSensitivitySeen} {
-				set HighestSensitivitySeen $sensitivity
-				set IndexOfCell $id
-			}
-		}
-	}
-
-	return $IndexOfCell
-}
-
+# Calculate sensitivity for each cell in netlist
 set index 0
 foreach_in_collection cell $cellList {
     set cellName [get_attri $cell base_name]
@@ -112,11 +95,6 @@ foreach_in_collection cell $cellList {
     set tempSensitivity 0
     if { [getNextSizeDown $libcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "downsize"]
-
-        # puts "==================="
-        # puts $tempSensitivity
-        # break
-        
         dict set M $index target $cellName
         dict set M $index change "downsize"
         dict set M $index sensitivity $tempSensitivity
@@ -124,38 +102,119 @@ foreach_in_collection cell $cellList {
 
     if { [getNextVtUpModified $libcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "upscale"]
-        if { [dict exists M index] && [dict get M index sensitivity] > $tempSensitivity } {
-            continue
+        if { ![dict exists $M $index] || [dict get $M $index sensitivity] < $tempSensitivity } {
+            dict set M $index target $cellName
+			dict set M $index change "upscale"
+			dict set M $index sensitivity $tempSensitivity
         }
-        dict set M $index target $cellName
-        dict set M $index change "upscale"
-        dict set M $index sensitivity $tempSensitivity
-        incr index
     }
+
+	incr index
 }
 
-puts "========================================================="
-set IndexOfCell [GetMostSensitiveCell $M]
-puts "Index of terget cell is: $IndexOfCell, with sensitivity: [dict get [dict get $M $IndexOfCell] sensitivity]"
+# Sort M in descending order according to sensitivity
+proc GetMostSensitiveCell { M } {
+	set HighestSensitivitySeen 0
+	set IndexOfCell 0
 
-# while { [dict size $M] } {
+	dict for {id cell} $M {
+		# puts "========================================================="
+		puts "id: $id"
+		dict with cell {
+			# puts "target: $target, change: $change, sensitivity: $sensitivity"
+			if {$sensitivity > $HighestSensitivitySeen} {
+				set HighestSensitivitySeen $sensitivity
+				set IndexOfCell $id
+			}
+		}
+	}
+	# puts "========================================================="
 
-# }
+	return $IndexOfCell
+}
 
-set finalWNS  [ PtWorstSlack clk ]
-set finalLeak [ PtLeakPower ]
-set capVio [ PtGetCapVio ]
-set tranVio [ PtGetTranVio ]
-set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
-puts $outFp "======================================" 
-puts $outFp "Final slack:\t${finalWNS} ps"
-puts $outFp "Final leakage:\t${finalLeak} W"
-puts $outFp "Final $capVio"
-puts $outFp "Final $tranVio"
-puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
-puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
-puts $outFp "Leakage improvment\t${improvment} %"
+proc Report {} {
+	set finalWNS  [ PtWorstSlack clk ]
+	set finalLeak [ PtLeakPower ]
+	set capVio [ PtGetCapVio ]
+	set tranVio [ PtGetTranVio ]
+	set improvment  [format "%.3f" [expr ( $initialLeak - $finalLeak ) / $initialLeak * 100.0]]
+	puts $outFp "======================================" 
+	puts $outFp "Final slack:\t${finalWNS} ps"
+	puts $outFp "Final leakage:\t${finalLeak} W"
+	puts $outFp "Final $capVio"
+	puts $outFp "Final $tranVio"
+	puts $outFp "#Vt cell swaps:\t${VtswapCnt}"
+	puts $outFp "#Cell size swaps:\t${SizeswapCnt}"
+	puts $outFp "Leakage improvment\t${improvment} %"
+}
 
+set LoopLimit 100
+set LoopCount 1
+while { [dict size $M] && LoopCount < LoopLimit} {
+	incr LoopCount
+	puts "Current loop count: $LoopCount"
+	
+	set IndexOfCell [GetMostSensitiveCell $M]
+	set target [dict get $M $IndexOfCell target]
+	set change [dict get $M $IndexOfCell change]
+	set sensitivity [dict get $M $IndexOfCell sensitivity]
+
+	puts "Target cell: $target, change: $change, sensitivity: $sensitivity"
+	puts "========================================================="
+
+	set libcell [get_lib_cells -of_objects $target]
+    set libcellName [get_attri $libcell base_name]
+
+	set newlibcellName "null"
+    if { $chaneg == "downsize" } {
+        set newlibcellName [getNextSizeDown $libcellName]
+    }
+    if { $change == "upscale" } {
+        set newlibcellName [getNextVtUpModified $libcellName]
+    }
+
+	size_cell $target $newlibcellName
+
+	set newWNS [ PtWorstSlack clk ]
+	if { $newWNS < 0.0 } {
+		# restore the original cell
+		puts "WNS goes negative. Withdraw this modification."
+		size_cell $target $libcellName
+		continue
+	}
+
+	puts "WNS is OK."
+	puts "Cell ${target} is swapped to $newlibcellName"
+
+	# Remove this cell from M
+	set M [dict remove $M IndexOfCell]
+	# Add modification plans to M
+	set tempSensitivity 0
+    if { [getNextSizeDown $newlibcellName] != "skip" } {
+        set tempSensitivity [ComputeSensitivity $target "downsize"]
+        dict set M $index target $target
+        dict set M $index change "downsize"
+        dict set M $index sensitivity $tempSensitivity
+    }
+    if { [getNextVtUpModified $newlibcellName] != "skip" } {
+        set tempSensitivity [ComputeSensitivity $cellName "upscale"]
+        if { ![dict exists $M $index] || [dict get $M $index sensitivity] < $tempSensitivity } {
+            dict set M $index target $target
+			dict set M $index change "upscale"
+			dict set M $index sensitivity $tempSensitivity
+        }
+    }
+
+	incr index
+
+	if {$LoopCount % 10 == 0} {
+		[Report]
+	}
+}
+
+
+[Report]
 close $outFp    
 
 
