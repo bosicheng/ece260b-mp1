@@ -58,22 +58,22 @@ proc ComputeSensitivity { c_i mode } {
     }
 
     size_cell $c_i $newlibcellName
-
-    # set nextSlack [PtCellSlack $c_i]
-    # set nextDelay [PtCellDelay $c_i]
-    # set nextLeak [PtCellLeak $c_i]
-    # puts "==================="
-    # puts $nextDelay
-    # puts $originalDelay
-    # puts $nextLeak
-    # puts $originalLeak
-    # puts $nextSlack
-    # puts $originalSlack
-    # puts [expr  ($originalLeak - $nextLeak) * ($originalSlack - $nextSlack) / ($nextDelay - $originalDelay)  ]
+    set nextSlack [PtCellSlack $c_i]
+    set nextDelay [PtCellDelay $c_i]
+    set nextLeak [PtCellLeak $c_i]
+    #puts "==================="
+    #puts $nextDelay
+    #puts $originalDelay
+    #puts $nextLeak
+    #puts $originalLeak
+    #puts $nextSlack
+    #puts $originalSlack
+    #puts [expr  ($originalLeak - $nextLeak) * ($originalSlack - $nextSlack) / ($nextDelay - $originalDelay)  ]
 
     # set sensitivity [expr { ($nextLeak - $originalLeak) * ($nextSlack - $originalSlack) / ($nextDelay - $originalDelay) * ( [PtTimingPaths $c_i] ) } ]
     set sensitivity [expr  ($originalLeak - $nextLeak) * ($originalSlack - $nextSlack) / ($nextDelay - $originalDelay)  ]
     
+
     size_cell $c_i $libcellName
 
     return $sensitivity
@@ -92,14 +92,12 @@ foreach_in_collection cell $cellList {
     set tempSensitivity 0
     if { [getNextSizeDown $libcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "downsize"]
-
-        # puts "==================="
-        # puts $tempSensitivity
-        # break
-        
+    #puts "==================="
+    #puts $tempSensitivity
         dict set M $index target $cellName
         dict set M $index change "downsize"
         dict set M $index sensitivity $tempSensitivity
+    #break
     }
 
     if { [getNextVtUpModified $libcellName] != "skip" } {
