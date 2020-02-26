@@ -21,24 +21,6 @@ set VtswapCnt 0
 set SizeswapCnt 0
 
 
-# Self modified Next Vt Up to return "skip" if invalid
-proc getNextVtDownModified { libcellName } {
-    if { [regexp {[a-z][a-z][0-9][0-9]f[0-9][0-9]} $libcellName] } { 
-        set newlibcellName [string replace $libcellName 4 4 m]
-        return $newlibcellName
-    }
-    
-    if { [regexp {[a-z][a-z][0-9][0-9]m[0-9][0-9]} $libcellName] } { 
-        set newlibcellName [string replace $libcellName 4 4 s]
-        return $newlibcellName
-    }
-    
-    if { [regexp {[a-z][a-z][0-9][0-9]s[0-9][0-9]} $libcellName] } { 
-        return "skip"
-    }
-
-}
-
 proc Report {} {
 	set finalWNS  [ PtWorstSlack clk ]
 	set finalLeak [ PtLeakPower ]
@@ -70,7 +52,7 @@ proc ComputeSensitivity { c_i mode } {
     }
 
     if { $mode == "upscale" } {
-        set newlibcellName [getNextVtDownModified $libcellName]
+        set newlibcellName [getNextVtDown $libcellName]
     }
 
     size_cell $c_i $newlibcellName
@@ -134,7 +116,7 @@ foreach_in_collection cell $cellList {
         dict set M $index sensitivity $tempSensitivity
     }
 
-    if { [getNextVtDownModified $libcellName] != "skip" } {
+    if { [getNextVtDown $libcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "upscale"]
         if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
             dict set M $index target $cellName
@@ -162,13 +144,16 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 
 	set libcell [get_lib_cells -of_objects $target]
     set libcellName [get_attri $libcell base_name]
+	if {$libcellName == "ms00f80"} {
+        continue
+    }
 
 	set newlibcellName "null"
     if { $change == "downsize" } {
         set newlibcellName [getNextSizeDown $libcellName]
     }
     if { $change == "upscale" } {
-        set newlibcellName [getNextVtDownModified $libcellName]
+        set newlibcellName [getNextVtDown $libcellName]
     }
 
 	size_cell $target $newlibcellName
@@ -194,7 +179,7 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
         dict set M $index change "downsize"
         dict set M $index sensitivity $tempSensitivity
     }
-    if { [getNextVtDownModified $newlibcellName] != "skip" } {
+    if { [getNextVtDown $newlibcellName] != "skip" } {
         set tempSensitivity [ComputeSensitivity $cellName "upscale"]
         if { [dict exists $M $index] == 0 || [dict get $M $index sensitivity] < $tempSensitivity } {
             dict set M $index target $target
