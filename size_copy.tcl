@@ -88,9 +88,16 @@ proc GetMostSensitiveCell { M } {
 	dict for {id cell} $M {
 		puts "id: $id"
 		dict with cell {
+			puts "================================================="
 			puts "target: $target, change: $change, sensitivity: $sensitivity"
+			if {$sensitivity > $HighestSensitivitySeen} {
+				set HighestSensitivitySeen sensitivity
+				set IndexOfCell id
+			}
 		}
 	}
+
+	return IndexOfCell
 }
 
 set index 0
@@ -127,7 +134,8 @@ foreach_in_collection cell $cellList {
     }
 }
 
-[GetMostSensitiveCell $M]
+set IndexOfCell [GetMostSensitiveCell $M]
+puts "Index of target cell is: $IndexOfCell"
 
 # while { [dict size $M] } {
 
