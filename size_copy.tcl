@@ -152,7 +152,7 @@ while { [dict size $M] && $LoopCount < $LoopLimit} {
 	puts "Cell ${target}, $libcellName is swapped to $newlibcellName"
 
 	# Update counter
-	if {choice == 0} {
+	if {$choice == 0} {
 		incr SizeswapCnt
 	} else {
 		incr VtswapCnt
