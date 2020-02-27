@@ -18,7 +18,7 @@ proc ComputeSensitivity { c_i mode } {
 	
     size_cell $c_i $newlibcellName
 
-    set nextSlack [PtCellSlack $c_i]
+    # set nextSlack [PtCellSlack $c_i]
     set nextDelay [PtCellDelay $c_i]
     set nextLeak [PtCellLeak $c_i]
    
@@ -82,7 +82,7 @@ foreach_in_collection cell $cellList {
     set libcell [get_lib_cells -of_objects $cellName]
     set libcellName [get_attri $libcell base_name]
 
-    if {$libcellName == "ms00f80"} {
+    if {$libcellName == "ms00f80" || ![regexp {[a-z][a-z][0-9][0-9][smf][0-9][0-9]} $libcellName]} {
         continue
     }
 
